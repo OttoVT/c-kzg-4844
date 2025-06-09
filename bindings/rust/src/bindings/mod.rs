@@ -318,7 +318,7 @@ impl KZGSettings {
     /// FIELD_ELEMENT_PER_BLOB g1 byte values in Lagrange form
     /// 65 g2 byte values in monomial form
     /// FIELD_ELEMENT_PER_BLOB g1 byte values in monomial form
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "std", not(target_os = "zkvm")))]
     pub fn load_trusted_setup_file(file_path: &Path, precompute: u64) -> Result<Self, Error> {
         #[cfg(unix)]
         let file_path_bytes = {
@@ -410,7 +410,7 @@ impl KZGSettings {
     /// FIELD_ELEMENT_PER_BLOB g1 byte values in Lagrange form
     /// 65 g2 byte values in monomial form
     /// FIELD_ELEMENT_PER_BLOB g1 byte values in monomial form
-    #[cfg(not(feature = "std"))]
+    #[cfg(all(not(feature = "std"), not(target_os = "zkvm")))]
     pub fn load_trusted_setup_file(file_path: &CStr, precompute: u64) -> Result<Self, Error> {
         Self::load_trusted_setup_file_inner(file_path, precompute)
     }
@@ -419,6 +419,7 @@ impl KZGSettings {
     ///
     /// Same as [`load_trusted_setup_file`](Self::load_trusted_setup_file)
     #[cfg_attr(not(feature = "std"), doc = ", but takes a `CStr` instead of a `Path`")]
+    #[cfg(not(target_os = "zkvm"))]
     pub fn load_trusted_setup_file_inner(file_path: &CStr, precompute: u64) -> Result<Self, Error> {
         // SAFETY: `b"r\0"` is a valid null-terminated string.
         const MODE: &CStr = c"r";
@@ -454,6 +455,8 @@ impl KZGSettings {
             }
         }
     }
+
+
 
     pub fn blob_to_kzg_commitment(&self, blob: &Blob) -> Result<KZGCommitment, Error> {
         let mut kzg_commitment: MaybeUninit<KZGCommitment> = MaybeUninit::uninit();
