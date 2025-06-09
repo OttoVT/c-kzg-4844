@@ -112,12 +112,8 @@ pub(crate) struct RawKzgSettings {
     pub g1_values_lagrange_brp: [u8; NUM_G1_POINTS * size_of::<g1_t>()],
     #[doc = " G2 group elements from the trusted setup in monomial form.\n The array contains `NUM_G2_POINTS` elements."]
     pub g2_values_monomial: [u8; NUM_G2_POINTS * size_of::<g2_t>()],
-    #[cfg(feature = "eip-7594")]
     #[doc = " Data used during FK20 proof generation."]
     pub x_ext_fft_columns: [u8; 2 * CELLS_PER_BLOB * FIELD_ELEMENTS_PER_CELL * size_of::<g1_t>()],
-    #[cfg(not(feature = "eip-7594"))]
-    #[doc = " Data used during FK20 proof generation."]
-    pub x_ext_fft_columns: [u8; 0],
     #[doc = " The scratch size for the fixed-base MSM."]
     pub scratch_size: usize,
 }
@@ -185,7 +181,6 @@ impl KZGSettings {
         raw: &'static RawKzgSettings,
     ) -> Result<&'static Self, bytemuck::PodCastError> {
         // allocate and leak memory for the table
-        #[cfg(feature = "eip-7594")]
         let x_ext_fft_columns = {
             let mut x_ext_fft_columns = Vec::with_capacity(2 * CELLS_PER_BLOB);
             for column in raw
@@ -209,10 +204,7 @@ impl KZGSettings {
                 as *mut g1_t,
             g2_values_monomial: try_cast_slice::<_, g2_t>(&raw.g2_values_monomial)?.as_ptr()
                 as *mut g2_t,
-            #[cfg(feature = "eip-7594")]
             x_ext_fft_columns: x_ext_fft_columns.as_mut_ptr() as *mut *mut g1_t,
-            #[cfg(not(feature = "eip-7594"))]
-            x_ext_fft_columns: ptr::null_mut(),
             tables: ptr::null_mut(),
             wbits: 0,
             scratch_size: raw.scratch_size,
@@ -601,7 +593,6 @@ impl KZGSettings {
         }
     }
 
-    #[cfg(feature = "eip-7594")]
     pub fn compute_cells(&self, blob: &Blob) -> Result<Box<CellsPerExtBlob>, Error> {
         let mut cells = [Cell::default(); CELLS_PER_EXT_BLOB];
         unsafe {
@@ -614,7 +605,6 @@ impl KZGSettings {
         }
     }
 
-    #[cfg(feature = "eip-7594")]
     pub fn compute_cells_and_kzg_proofs(
         &self,
         blob: &Blob,
@@ -632,7 +622,6 @@ impl KZGSettings {
         }
     }
 
-    #[cfg(feature = "eip-7594")]
     pub fn recover_cells_and_kzg_proofs(
         &self,
         cell_indices: &[u64],
@@ -1497,7 +1486,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "eip-7594")]
     fn test_compute_cells() {
         let kzg_settings = trusted_setup();
         let test_files: Vec<PathBuf> = glob::glob(COMPUTE_CELLS_TESTS)
@@ -1537,7 +1525,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "eip-7594")]
     fn test_compute_cells_and_kzg_proofs() {
         let kzg_settings = trusted_setup();
         let test_files: Vec<PathBuf> = glob::glob(COMPUTE_CELLS_AND_KZG_PROOFS_TESTS)
@@ -1584,7 +1571,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "eip-7594")]
     fn test_recover_cells_and_kzg_proofs() {
         let kzg_settings = trusted_setup();
         let test_files: Vec<PathBuf> = glob::glob(RECOVER_CELLS_AND_KZG_PROOFS_TESTS)
@@ -1638,7 +1624,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "eip-7594")]
     fn test_verify_cell_kzg_proof_batch() {
         let kzg_settings = trusted_setup();
         let test_files: Vec<PathBuf> = glob::glob(VERIFY_CELL_KZG_PROOF_BATCH_TESTS)
