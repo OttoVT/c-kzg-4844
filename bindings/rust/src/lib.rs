@@ -100,3 +100,48 @@ mod risc0_ffi {
         panic!("c_kzg assertion failure.");
     }
 }
+
+#[cfg(test)]
+mod alloy_compat_tests {
+    use super::*;
+    #[cfg(feature = "std")]
+    use std::path::Path;
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_alloy_compat_api() {
+        // This is exactly what alloy-eips 1.0.9 is trying to do:
+        // line 68: let settings = KzgSettings::load_trusted_setup_file(trusted_setup_file, PRECOMPUTE)?;
+        
+        const PRECOMPUTE: u64 = 0;
+        let trusted_setup_file = Path::new("./some_file.txt"); // dummy path
+        
+        // This should compile if the method exists with the right signature
+        let _result = KzgSettings::load_trusted_setup_file(trusted_setup_file, PRECOMPUTE);
+        
+        println!("API compatibility test passed - the load_trusted_setup_file method exists with correct signature");
+    }
+
+    #[test]
+    fn test_comprehensive_alloy_compat() {
+        // Test all methods that alloy-eips might need
+        
+        // This will fail to compile if the methods don't exist or have wrong signatures
+        fn _check_api_exists() {
+            use super::*;
+            
+            // Test compute_cells method signature
+            fn _check_compute_cells(settings: &KzgSettings, blob: &Blob) -> Result<Box<bindings::CellsPerExtBlob>, Error> {
+                settings.compute_cells(blob)
+            }
+            
+            // Test load_trusted_setup_file method signature  
+            #[cfg(feature = "std")]
+            fn _check_load_trusted_setup_file(path: &std::path::Path, precompute: u64) -> Result<KzgSettings, Error> {
+                KzgSettings::load_trusted_setup_file(path, precompute)
+            }
+        }
+        
+        println!("All API compatibility checks passed!");
+    }
+}
